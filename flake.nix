@@ -38,6 +38,9 @@
 
             rust-analyzer
             fenix.packages.${system}.latest.rustfmt
+
+            python3
+            python3Packages.dbus-python
           ];
           # RUSTFMT = "${fenix.packages.${system}.latest.rustfmt}/bin/rustfmt";
           # RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";

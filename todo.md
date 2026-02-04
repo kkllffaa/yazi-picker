@@ -10,16 +10,16 @@ monitor -> 'tail -f ~/.local/state/yazi/yazi.log'
 
 ## makefile
 
-## test picker
+##  test picker
 
 ## implement methods:
-[x] OpenFile  
-[ ] SaveFile  
-[ ] SaveFiles  
-[ ] SelectFolder  
+- [x] OpenFile
+- [ ] SaveFile
+- [ ] SaveFiles
+- [ ] SelectFolder
 
 ## options
-multiple (b): If true, allows selecting multiple files.
-directory (b): If true, selects folders instead of files.
-filters (a(sa(us))): Serialized file filters to restrict file types.
-current_folder (ay): Suggested starting directory.
+- [ ] multiple (b): If true, allows selecting multiple files.
+- [ ] directory (b): If true, selects folders instead of files.
+- [ ] filters (a(sa(us))): Serialized file filters to restrict file types.
+- [ ] current_folder (ay): Suggested starting directory.
