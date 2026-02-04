@@ -1,25 +1,40 @@
 # TODO:
 
-## flake
-export YAZI_LOG=debug
+## build system
+- [ ] makefile
+- [ ] plugin
+- [ ] systemd service
+- [ ] dbus service
+- [ ] pick script
+- [ ] man page
+
+## dev utils
+- [x] test picker
+- [ ] monitor -> 'tail -f ~/.local/state/yazi/yazi.log'
+- [ ] export YAZI_LOG=debug
+- [ ] improve test picker
 
 
-## monitor
-monitor -> 'tail -f ~/.local/state/yazi/yazi.log'
 
-
-## makefile
-
-##  test picker
 
 ## implement methods:
-- [x] OpenFile
-- [ ] SaveFile
-- [ ] SaveFiles
-- [ ] SelectFolder
+[backend docs](https://github.com/flatpak/xdg-desktop-portal/blob/main/data/org.freedesktop.impl.portal.FileChooser.xml)  
+[fronted docs](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html)
 
-## options
-- [ ] multiple (b): If true, allows selecting multiple files.
-- [ ] directory (b): If true, selects folders instead of files.
-- [ ] filters (a(sa(us))): Serialized file filters to restrict file types.
-- [ ] current_folder (ay): Suggested starting directory.
+* OpenFile:
+	- [x] method
+	- [ ] options
+* SaveFile
+	- [ ] method
+	- [ ] options
+* SaveFiles
+	- [ ] method
+	- [ ] options
+
+## backend
+- [ ] use fifo
+- [ ] open as floating
+- [ ] improve options in pick script
+
+## plugin
+- [ ] support all modes

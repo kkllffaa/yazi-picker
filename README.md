@@ -27,3 +27,6 @@ require("yazi-picker"):setup {
 	ShiftEnter = ""
 }
 ```
+
+
+Todo's and plans: [todo](todo.md).
