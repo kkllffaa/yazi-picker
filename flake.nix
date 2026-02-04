@@ -4,6 +4,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -11,12 +15,12 @@
       self,
       nixpkgs,
       flake-utils,
+      fenix,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        # pkgs = nixpkgs.legacyPackages.${system};
         pkgs = import nixpkgs { inherit system; };
 
         myPackage = pkgs.callPackage ./yazi-portal-rust { };
@@ -32,14 +36,10 @@
             cargo
             rustc
 
-            # rust-rust-analyzer
-            # rustfmt
-
-            # Add crane's tools to the dev shell for convenience
-            # craneLib.cargoClippy
-            # craneLib.cargoFmt
-            # craneLib.rust-analyzer # Uncomment if you want rust-analyzer
+            rust-analyzer
+            fenix.packages.${system}.latest.rustfmt
           ];
+          # RUSTFMT = "${fenix.packages.${system}.latest.rustfmt}/bin/rustfmt";
           # RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
         };
       }

@@ -1,8 +1,9 @@
-use config::Config;
 use std::collections::HashMap;
 use std::env::{self, temp_dir};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use config::Config;
 use tokio::fs::{File, remove_file};
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
@@ -15,7 +16,7 @@ mod fifo;
 #[derive(serde::Deserialize)]
 struct Settings {
 	terminal_binary: String,
-	terminal_args: Vec<String>,
+	terminal_args:   Vec<String>,
 }
 
 impl Settings {

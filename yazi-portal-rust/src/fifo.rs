@@ -1,4 +1,5 @@
-use std::{ffi::CString, path::Path};
+use std::ffi::CString;
+use std::path::Path;
 
 mod sys {
 	unsafe extern "C" {

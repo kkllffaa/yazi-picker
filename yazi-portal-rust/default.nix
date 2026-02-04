@@ -2,7 +2,6 @@
   lib,
   rustPlatform,
   pkg-config,
-  # dbus,
   ...
 }:
 
@@ -20,7 +19,6 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [ pkg-config ];
 
-  # buildInputs = [ dbus ];
 
   # (Rest of your postInstall logic remains the same)
   postInstall = ''
