@@ -1,7 +1,0 @@
-monitor -> 'tail -f ~/.local/state/yazi/yazi.log'
-export YAZI_LOG=debug
-
-
-makefile
-
-test picker

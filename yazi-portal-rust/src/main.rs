@@ -58,7 +58,7 @@ impl FileChooser {
 		println!("Request received: {}", title);
 		println!("Request options: {:?}", options);
 
-		let pick = Path::new("../smart-picker.yazi/pick.sh");
+		let pick = Path::new("../pick.sh");
 		if !pick.exists() {
 			eprintln!("Error pick.sh not found at {}", pick.display());
 			return error_ret;
