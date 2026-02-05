@@ -6,11 +6,10 @@
 }:
 
 let
-  # 1. Import the Cargo.toml file as a Nix set
+  portal_path = "org.freedesktop.impl.portal.desktop.rust_backend";
   manifest = lib.importTOML ./Cargo.toml;
 in
-rustPlatform.buildRustPackage {
-  # 2. Extract name and version dynamically
+rustPlatform.buildRustPackage rec {
   pname = manifest.package.name;
   version = manifest.package.version;
 
@@ -19,22 +18,25 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [ pkg-config ];
 
-
-  # (Rest of your postInstall logic remains the same)
   postInstall = ''
-    # mkdir -p $out/share/dbus-1/services
-    # mkdir -p $out/lib/systemd/user
+    mkdir -p $out/share/xdg-desktop-portal/portals
+    mkdir -p $out/share/dbus-1/services
+    mkdir -p $out/lib/systemd/user
 
-    # cp org.freedesktop.impl.portal.desktop.MyService.service.in \
-    #    $out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.MyService.service
+    substitute yazi-picker.portal.in \
+      $out/share/xdg-desktop-portal/portals/yazi-picker.portal \
+      --replace "@PORTAL_NAME@" "${portal_path}" \
+      --replace "@MAIN_BIN@" $out/bin/${pname}
 
-    # cp my-custom-picker.service.in \
-    #    $out/lib/systemd/user/my-custom-picker.service
 
-    # substituteInPlace $out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.MyService.service \
-    #    --replace "@BIN_DIR@" "$out/bin"
+    substitute yazi-picker.dbus.service.in \
+      $out/share/dbus-1/services/${portal_path}.service \
+      --replace "@PORTAL_NAME@" "${portal_path}" \
+      --replace "@MAIN_BIN@" $out/bin/${pname}
 
-    # substituteInPlace $out/lib/systemd/user/my-custom-picker.service \
-    #    --replace "@BIN_DIR@" "$out/bin"
+    substitute yazi-picker.sysd.service.in \
+      $out/lib/systemd/user/yazi-picker.service \
+      --replace "@PORTAL_NAME@" "${portal_path}" \
+      --replace "@MAIN_BIN@" $out/bin/${pname}
   '';
 }

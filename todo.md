@@ -3,8 +3,8 @@
 ## build system
 - [ ] makefile
 - [ ] plugin
-- [ ] systemd service
-- [ ] dbus service
+- [x] systemd service
+- [x] dbus service
 - [ ] pick script
 - [ ] man page
 

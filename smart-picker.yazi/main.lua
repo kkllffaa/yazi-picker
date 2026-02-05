@@ -8,13 +8,6 @@ local function notifyerror(message)
 		timeout = 5,
 	})
 end
-local write = ya.sync(function(state, path, content)
-	local f = io.open(path, "w")
-	if f then
-		f:write(content)
-		f:close()
-	end
-end)
 local get_out = ya.sync(function(state)
 	return state.out
 end)
@@ -23,11 +16,10 @@ local function finish(content)
 
 	ya.dbg("printing: " .. tostring(content) .. "to" .. tostring(out))
 
-	-- write("test.txt", tostring(content))
 	if out and content then
 		local f = io.open(out, "w")
 		if f then
-			f:write(tostring(content))
+			f:write(tostring(content) .. '\n')
 			f:flush()
 			f:close()
 			ya.manager_emit("quit", {})

@@ -1,0 +1,13 @@
+[Unit]
+Description=My Custom File Chooser
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=@PORTAL_NAME@
+ExecStart=@MAIN_BIN@
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

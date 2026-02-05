@@ -58,7 +58,7 @@ impl FileChooser {
 		println!("Request received: {}", title);
 		println!("Request options: {:?}", options);
 
-		let pick = Path::new("../pick.sh");
+		let pick = Path::new("/home/kkllffaa/source/yazi-picker/pick.sh"); // TODO: dont hardcode it and dont rely on $PATH
 		if !pick.exists() {
 			eprintln!("Error pick.sh not found at {}", pick.display());
 			return error_ret;

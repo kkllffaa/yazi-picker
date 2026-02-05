@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=@PORTAL_NAME@
+Exec=@MAIN_BIN@
+SystemdService=yazi-picker.service
