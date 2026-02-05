@@ -1,7 +1,9 @@
 
-
-
-
+## dev:
+* ```export YAZI_LOG=debug```
+* monitor.sh			-> see yazi debug messages
+* pick.sh					-> open picker and print picked file to console
+* test-picker.py	-> request file from dbus portal service
 
 ## config:
 ```
@@ -27,6 +29,23 @@ require("yazi-picker"):setup {
 	ShiftEnter = ""
 }
 ```
+
+## mimeapps.list:
+```
+[Added Associations]
+inode/directory=yazi.desktop
+
+[Default Applications]
+inode/directory=yazi.desktop
+```
+
+## $XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf
+```
+[preferred]
+org.freedesktop.impl.portal.FileChooser=TODO
+```
+
+https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatibility.md
 
 
 Todo's and plans: [todo](todo.md).

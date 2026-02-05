@@ -10,12 +10,9 @@
 
 ## dev utils
 - [x] test picker
-- [ ] monitor -> 'tail -f ~/.local/state/yazi/yazi.log'
+- [x] monitor -> 'tail -f ~/.local/state/yazi/yazi.log'
 - [ ] export YAZI_LOG=debug
 - [ ] improve test picker
-
-
-
 
 ## implement methods:
 [backend docs](https://github.com/flatpak/xdg-desktop-portal/blob/main/data/org.freedesktop.impl.portal.FileChooser.xml)  
@@ -38,3 +35,4 @@
 
 ## plugin
 - [ ] support all modes
+- [ ] filter
