@@ -1,12 +1,11 @@
 use std::collections::HashMap;
-use std::env::temp_dir;
+use std::env::{current_dir, current_exe, temp_dir};
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use config::Config;
 use smol::process::Command;
 use zbus::zvariant::{OwnedObjectPath, OwnedValue, Value};
 use zbus::{conn, interface};
@@ -14,31 +13,55 @@ use zbus::{conn, interface};
 mod fifo;
 
 // --- Configuration Logic ---
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
 struct Settings {
 	terminal_binary: String,
 	terminal_args:   Vec<String>,
 }
+impl Default for Settings {
+	fn default() -> Self {
+		Self {
+			terminal_binary: String::from("kitty"),
+			terminal_args:   ["--class=floating", "-e", "sh", "-c"]
+				.into_iter()
+				.map(String::from)
+				.collect(),
+		}
+	}
+}
 
 impl Settings {
 	fn load() -> Result<Self, Box<dyn Error>> {
-		// 1. Start with Config File
-		let mut builder = Config::builder()
-			.set_default("terminal_binary", "kitty")?
-			.set_default("terminal_args", vec!["--class=floating", "-e", "sh", "-c"])?;
-
-		if let Some(config_dir) = dirs::config_dir() {
-			let config_path = config_dir.join("yazi-picker").join("config");
-			builder = builder.add_source(config::File::from(config_path).required(false));
+		let mut conf_file = None;
+		if let Some(cf) = dirs::config_dir().map(|f| f.join("yazi-picker").join("config.toml")) {
+			if cf.exists() {
+				conf_file = Some(cf);
+			}
 		}
-		builder = builder.add_source(config::File::with_name("config").required(false));
+		{
+			let local_cf = PathBuf::from("config.toml");
+			let _local_cf = current_dir()?.join("config.toml");
+			let _local_cf = current_exe()?.parent().unwrap().join("config.toml");
+			if local_cf.exists() {
+				conf_file = Some(local_cf)
+			}
+		}
+		let settings: Settings = if let Some(cf) = conf_file {
+			println!("loading config from: {}", cf.display());
+			toml::from_str(&fs::read_to_string(cf)?)?
+		} else {
+			println!("using default config");
+			Default::default()
+		};
 
 		// 2. Override with TERMINAL env var (Convention)
 		// if let Ok(term) = env::var("TERMINAL") {
 		// 	builder = builder.set_override("terminal_binary", term)?;
 		// }
 
-		Ok(builder.build()?.try_deserialize()?)
+		Ok(settings)
 	}
 }
 
@@ -147,6 +170,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let chooser = FileChooser {
 		settings: Settings::load()?,
 	};
+
+	println!("settings: {:?}", &chooser.settings);
 
 	smol::block_on(async {
 		let _conn = conn::Builder::session()?

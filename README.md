@@ -5,10 +5,10 @@
 * pick.sh					-> open picker and print picked file to console
 * test-picker.py	-> request file from dbus portal service
 
-## $XDG_CONFIG_HOME/yazi-picker/config
+## $XDG_CONFIG_HOME/yazi-picker/config.toml
 ```
-[terminal_binary]: String,
-[terminal_args]: Vec<String>,
+terminal_bin = "ghostty" # your favourite terminal emulator
+terminal_args = [ "--class=floating", "-e", "sh", "-c" ] # args to it
 ```
 ## $XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf
 ```

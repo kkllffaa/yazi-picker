@@ -208,18 +208,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "config"
-version = "0.15.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b30fa8254caad766fc03cb0ccae691e14bf3bd72bfff27f72802ce729551b3d6"
-dependencies = [
- "pathdiff",
- "serde_core",
- "toml",
- "winnow",
-]
-
-[[package]]
 name = "crossbeam-utils"
 version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -466,12 +454,6 @@ name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
-
-[[package]]
-name = "pathdiff"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 
 [[package]]
 name = "pin-project-lite"
@@ -912,10 +894,10 @@ checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
 name = "yazi-portal-rust"
 version = "0.1.0"
 dependencies = [
- "config",
  "dirs",
  "serde",
  "smol",
+ "toml",
  "zbus",
 ]
 
