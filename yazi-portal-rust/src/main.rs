@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::env::{self, temp_dir};
+use std::env::temp_dir;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::Read;
@@ -25,13 +25,18 @@ impl Settings {
 		// 1. Start with Config File
 		let mut builder = Config::builder()
 			.set_default("terminal_binary", "kitty")?
-			.set_default("terminal_args", vec!["--class=floating", "-e", "sh", "-c"])?
-			.add_source(config::File::with_name("config").required(false));
+			.set_default("terminal_args", vec!["--class=floating", "-e", "sh", "-c"])?;
+
+		if let Some(config_dir) = dirs::config_dir() {
+			let config_path = config_dir.join("yazi-picker").join("config");
+			builder = builder.add_source(config::File::from(config_path).required(false));
+		}
+		builder = builder.add_source(config::File::with_name("config").required(false));
 
 		// 2. Override with TERMINAL env var (Convention)
-		if let Ok(term) = env::var("TERMINAL") {
-			builder = builder.set_override("terminal_binary", term)?;
-		}
+		// if let Ok(term) = env::var("TERMINAL") {
+		// 	builder = builder.set_override("terminal_binary", term)?;
+		// }
 
 		Ok(builder.build()?.try_deserialize()?)
 	}

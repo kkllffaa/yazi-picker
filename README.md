@@ -5,12 +5,60 @@
 * pick.sh					-> open picker and print picked file to console
 * test-picker.py	-> request file from dbus portal service
 
-## config:
+## $XDG_CONFIG_HOME/yazi-picker/config
 ```
 [terminal_binary]: String,
 [terminal_args]: Vec<String>,
 ```
+## $XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf
+```
+[preferred]
+org.freedesktop.impl.portal.FileChooser=yazi-picker
+```
+## $XDG_CONFIG_HOME/yazi/init.lua
+```
+require("yazi-picker"):setup {
+	Enter = "",
+	ShiftEnter = ""
+}
+```
+## $XDG_CONFIG_HOME/yazi/keymap.toml
+```
+[[mgr.prepend_keymap]]
+on = ["<Enter>"]
+run = "plugin yazi-picker
+[[mgr.prepend_keymap]]
+on = ["<S-Enter>"]
+run = "plugin yazi-picker -- --shift
+```
+## 
 
+## nix
+```
+xdg.portal = {
+  enable = true;
+  extraPortals = [
+    inputs.yazi-picker.packages.${pkgs.system}.default
+  ];
+  config.niri = { # or hyperland or other
+    "org.freedesktop.impl.portal.FileChooser" = "yazi-picker";
+  };
+};
+programs.yazi = {
+	keymap.mgr.prepend_keymap = [
+    { on = [ "<Enter>" ];
+      run = "plugin yazi-picker";
+    }
+    { on = [ "<S-Enter>" ];
+      run = "plugin yazi-picker -- --shift";
+    }
+	];
+  plugins = {
+    # yazi-picker = "/home/kkllffaa/source/smart-picker.yazi";
+  };
+  initLua = ./your_lua_script.lua
+};
+```
 
 ## modes:
 1. single file - hover and enter
@@ -22,15 +70,9 @@
 
 
 
-## init.lua
-```
-require("yazi-picker"):setup {
-	Enter = "",
-	ShiftEnter = ""
-}
-```
 
-## mimeapps.list:
+
+## mimeapps.list (if you want to open directories in yazi):
 ```
 [Added Associations]
 inode/directory=yazi.desktop
@@ -39,11 +81,7 @@ inode/directory=yazi.desktop
 inode/directory=yazi.desktop
 ```
 
-## $XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf
-```
-[preferred]
-org.freedesktop.impl.portal.FileChooser=TODO
-```
+
 
 https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatibility.md
 
