@@ -2,10 +2,10 @@
 
 ## build system
 - [ ] makefile
-- [ ] plugin
+- [x] plugin
 - [x] systemd service
 - [x] dbus service
-- [ ] pick script
+- [x] pick script
 - [ ] man page
 
 ## dev utils

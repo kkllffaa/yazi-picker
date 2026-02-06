@@ -26,8 +26,24 @@
         myPackage = pkgs.callPackage ./yazi-portal-rust { };
       in
       {
-        # Define the default package for nix build
-        packages.default = myPackage;
+        packages.portal = myPackage;
+
+        packages.plugin = pkgs.stdenvNoCC.mkDerivation rec {
+          pname = "yazi-picker-plugin";
+          name = pname;
+          src = ./smart-picker.yazi;
+          installPhase = ''
+            runHook preInstall
+            cp -r ${src} $out
+            runHook postInstall
+          '';
+        };
+
+        packages.runner = pkgs.runCommand "yazi-picker-runner" { } ''
+          mkdir -p $out/bin
+          cp ${./pick.sh} $out/bin/pick
+          chmod +x $out/bin/pick
+        '';
 
         devShells.default = pkgs.mkShell {
           # inputsFrom = [ myPackage ];

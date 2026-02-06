@@ -1,3 +1,4 @@
+# work in progress some methods are not implemented and plugin only works with files
 
 ## dev:
 * ```export YAZI_LOG=debug```
@@ -31,14 +32,15 @@ run = "plugin yazi-picker
 on = ["<S-Enter>"]
 run = "plugin yazi-picker -- --shift
 ```
-## 
+## $XDG_CONFIG_HOME/yazi/yazi-picker.yazi/
+copy main.lua from smart-picker.yazi
 
 ## nix
 ```
 xdg.portal = {
   enable = true;
   extraPortals = [
-    inputs.yazi-picker.packages.${pkgs.system}.default
+    inputs.yazi-picker.packages.${pkgs.system}.portal
   ];
   config.niri = { # or hyperland or other
     "org.freedesktop.impl.portal.FileChooser" = "yazi-picker";
@@ -54,7 +56,7 @@ programs.yazi = {
     }
 	];
   plugins = {
-    # yazi-picker = "/home/kkllffaa/source/smart-picker.yazi";
+    yazi-picker = inputs.yazi-picker.packages.${pkgs.system}.plugin;
   };
   initLua = ./your_lua_script.lua
 };
