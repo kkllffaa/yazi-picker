@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 use std::env::{self, temp_dir};
+use std::error::Error;
+use std::fs::{self, File};
+use std::io::Read;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use config::Config;
-use tokio::fs::{File, remove_file};
-use tokio::io::AsyncReadExt;
-use tokio::process::Command;
+use smol::process::Command;
 use zbus::zvariant::{OwnedObjectPath, OwnedValue, Value};
-use zbus::{Connection, Result, interface};
+use zbus::{conn, interface};
 
 mod fifo;
 
@@ -20,21 +21,19 @@ struct Settings {
 }
 
 impl Settings {
-	fn load() -> Self {
+	fn load() -> Result<Self, Box<dyn Error>> {
 		// 1. Start with Config File
 		let mut builder = Config::builder()
-			.set_default("terminal_binary", "kitty")
-			.unwrap()
-			.set_default("terminal_args", vec!["--class=floating", "-e", "sh", "-c"])
-			.unwrap()
+			.set_default("terminal_binary", "kitty")?
+			.set_default("terminal_args", vec!["--class=floating", "-e", "sh", "-c"])?
 			.add_source(config::File::with_name("config").required(false));
 
 		// 2. Override with TERMINAL env var (Convention)
 		if let Ok(term) = env::var("TERMINAL") {
-			builder = builder.set_override("terminal_binary", term).unwrap();
+			builder = builder.set_override("terminal_binary", term)?;
 		}
 
-		builder.build().unwrap().try_deserialize().unwrap()
+		Ok(builder.build()?.try_deserialize()?)
 	}
 }
 
@@ -55,8 +54,7 @@ impl FileChooser {
 	) -> (u32, HashMap<String, OwnedValue>) {
 		let error_ret = (1, HashMap::new());
 
-		println!("Request received: {}", title);
-		println!("Request options: {:?}", options);
+		println!("Request received: {}, options: {:?}", title, options);
 
 		let pick = Path::new("/home/kkllffaa/source/yazi-picker/pick.sh"); // TODO: dont hardcode it and dont rely on $PATH
 		if !pick.exists() {
@@ -71,7 +69,7 @@ impl FileChooser {
 			.as_nanos();
 		let filename = format!("portal-selection-{}", timestamp);
 		let tmp_path = temp_dir().join(filename);
-		drop(File::create_new(&tmp_path).await.unwrap());
+		drop(File::create_new(&tmp_path).unwrap()); // TODO: dont block on file create? idk
 		let cmd = format!("{} -o {}", pick.display(), tmp_path.display());
 
 		println!(
@@ -98,10 +96,11 @@ impl FileChooser {
 			Ok(_) => {}
 		}
 
+		// TODO: dont block
 		let mut selection = String::new();
-		match File::open(&tmp_path).await {
+		match File::open(&tmp_path) {
 			Ok(mut f) => {
-				if let Err(e) = f.read_to_string(&mut selection).await {
+				if let Err(e) = f.read_to_string(&mut selection) {
 					eprintln!("Failed to read file: {}", e);
 					return error_ret;
 				}
@@ -111,7 +110,7 @@ impl FileChooser {
 				return error_ret;
 			}
 		}
-		remove_file(tmp_path).await.unwrap();
+		fs::remove_file(tmp_path).unwrap();
 
 		let selection = selection.trim();
 		if selection.is_empty() {
@@ -139,26 +138,21 @@ impl FileChooser {
 	}
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
 	let chooser = FileChooser {
-		settings: Settings::load(),
+		settings: Settings::load()?,
 	};
 
-	let connection = Connection::session().await?;
+	smol::block_on(async {
+		let _conn = conn::Builder::session()?
+			.name("org.freedesktop.impl.portal.desktop.rust_backend")?
+			.serve_at("/org/freedesktop/portal/desktop", chooser)?
+			.build()
+			.await?;
 
-	// Register the service name so Portals can find us
-	connection
-		.request_name("org.freedesktop.impl.portal.desktop.rust_backend")
-		.await?;
+		println!("Service running. Press Ctrl+C to stop.");
 
-	// Serve the object at the standard path
-	connection
-		.object_server()
-		.at("/org/freedesktop/portal/desktop", chooser)
-		.await?;
-
-	println!("Service running. Press Ctrl+C to stop.");
-	std::future::pending::<()>().await;
-	Ok(())
+		std::future::pending::<()>().await;
+		Ok(())
+	})
 }
