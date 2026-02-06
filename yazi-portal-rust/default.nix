@@ -23,20 +23,19 @@ rustPlatform.buildRustPackage rec {
     mkdir -p $out/share/dbus-1/services
     mkdir -p $out/lib/systemd/user
 
+    PORTAL_NAME="${portal_path}"
+    MAIN_BIN="$out/bin/${pname}"
+
     substitute yazi-picker.portal.in \
       $out/share/xdg-desktop-portal/portals/yazi-picker.portal \
-      --replace "@PORTAL_NAME@" "${portal_path}" \
-      --replace "@MAIN_BIN@" $out/bin/${pname}
-
+      --subst-var PORTAL_NAME --subst-var MAIN_BIN
 
     substitute yazi-picker.dbus.service.in \
       $out/share/dbus-1/services/${portal_path}.service \
-      --replace "@PORTAL_NAME@" "${portal_path}" \
-      --replace "@MAIN_BIN@" $out/bin/${pname}
+      --subst-var PORTAL_NAME --subst-var MAIN_BIN
 
     substitute yazi-picker.sysd.service.in \
       $out/lib/systemd/user/yazi-picker.service \
-      --replace "@PORTAL_NAME@" "${portal_path}" \
-      --replace "@MAIN_BIN@" $out/bin/${pname}
+      --subst-var PORTAL_NAME --subst-var MAIN_BIN
   '';
 }
