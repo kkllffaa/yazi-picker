@@ -7,6 +7,7 @@ mod sys {
 	}
 }
 
+#[allow(unused)]
 pub fn mkfifo(path: &Path) {
 	let c_path = CString::new(path.to_str().unwrap()).unwrap();
 
