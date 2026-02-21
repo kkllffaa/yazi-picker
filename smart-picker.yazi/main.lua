@@ -1,4 +1,5 @@
-local M = {}
+local json = require(".json")
+
 
 local function notifyerror(message)
 	ya.notify({
@@ -14,7 +15,7 @@ end)
 local function finish(content)
 	local out = get_out()
 
-	ya.dbg("printing: " .. tostring(content) .. "to" .. tostring(out))
+	ya.dbg("printing: " .. tostring(content) .. " to " .. tostring(out))
 
 	if out and content then
 		local f = io.open(out, "w")
@@ -22,7 +23,7 @@ local function finish(content)
 			f:write(tostring(content) .. '\n')
 			f:flush()
 			f:close()
-			ya.manager_emit("quit", {})
+			ya.emit("quit", {})
 		end
 	end
 end
@@ -58,6 +59,57 @@ local function status_texts(state)
 		return rrr
 	end
 end
+
+local get_state = ya.sync(function(state)
+	if not state.out then
+		return {
+			normal = state.Enter,
+			shift = state.ShiftEnter,
+		}
+	end
+
+	local state_out = {}
+	state_out.mode = state.mode
+	state_out.out = state.out
+	state_out.cwd = cx.active.current.cwd
+
+
+	local hov = cx.active.current.hovered
+	local sel = cx.active.selected
+
+	if #sel == 0 then
+		if hov then
+			state_out.url = hov.url
+		else
+			state_out.empty = true
+		end
+	elseif #sel == 1 then
+		local url
+		for _, f in pairs(sel) do
+			url = f
+			break
+		end
+		state_out.url = url
+	else
+		state_out.urls = {}
+		for _, f in pairs(sel) do
+			table.insert(state_out.urls, f)
+		end
+	end
+
+
+
+	return state_out
+end)
+
+local function is_dir(url)
+	return fs.cha(url).is_dir
+end
+local function is_file(url)
+	return not is_dir(url)
+end
+
+local M = {}
 function M:setup(opts)
 	self.Enter      = opts.Enter
 	self.ShiftEnter = opts.ShiftEnter
@@ -116,55 +168,6 @@ function M:setup(opts)
 				:style(ui.Style():bold())
 		end
 	end, 500, Status.RIGHT)
-end
-
-local get_state = ya.sync(function(state)
-	if not state.out then
-		return {
-			normal = state.Enter,
-			shift = state.ShiftEnter,
-		}
-	end
-
-	local state_out = {}
-	state_out.mode = state.mode
-	state_out.out = state.out
-	state_out.cwd = cx.active.current.cwd
-
-
-	local hov = cx.active.current.hovered
-	local sel = cx.active.selected
-
-	if #sel == 0 then
-		if hov then
-			state_out.url = hov.url
-		else
-			state_out.empty = true
-		end
-	elseif #sel == 1 then
-		local url
-		for _, f in pairs(sel) do
-			url = f
-			break
-		end
-		state_out.url = url
-	else
-		state_out.urls = {}
-		for _, f in pairs(sel) do
-			table.insert(state_out.urls, f)
-		end
-	end
-
-
-
-	return state_out
-end)
-
-local function is_dir(url)
-	return fs.cha(url).is_dir
-end
-local function is_file(url)
-	return not is_dir(url)
 end
 
 function M:entry(job)

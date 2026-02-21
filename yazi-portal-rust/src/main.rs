@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 
+use serde::Serialize;
 use zbus::zvariant::{DeserializeDict, OwnedObjectPath, OwnedValue, Type, Value};
 use zbus::{conn, fdo, interface};
 
@@ -36,7 +37,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 struct FileChooser {
 	settings: Settings,
 }
-
 pub enum PickerResult {
 	Success(Vec<String>),
 	Cancelled,
@@ -63,16 +63,49 @@ impl PickerResult {
 
 #[derive(Debug, Default, Type, DeserializeDict)]
 #[zvariant(signature = "dict")]
-// #[serde(deny_unknown_fields)]
-struct PickerOptions {
-	pub _accept_label: Option<String>,
-	pub _modal:        Option<bool>,
-	pub _multiple:     Option<bool>,
-	pub _directory:    Option<bool>,
-	pub _filters:      Option<Vec<(String, Vec<(u32, String)>)>>,
-	pub _current_name: Option<String>,
+#[zvariant(deny_unknown_fields)]
+struct CommonOptions {
+	/// Label for the accept button with mnemonics (_A => underlined A, __ => _)
+	pub _accept_label:   Option<String>, // All
+	/// Lock parent window
+	pub _modal:          Option<bool>, // All
+	/// List of combo boxes (id, label, choices[(id, label)], pre-selected id from choices)
+	pub _choices:        Option<Vec<(String, String, Vec<(String, String)>, String)>>, // All
+	/// Suggested folder to start picker
+	pub _current_folder: Option<Vec<u8>>, // All os path
+
+	pub _directory: Option<bool>, // Open
+	pub _multiple:  Option<bool>, // Open, in spec is also in save but its open bug https://github.com/flatpak/xdg-desktop-portal/issues/1877
+
+	/// File filters (name, rules[1 = glob 0 = mime, pattern])
+	pub _filters:        Option<Vec<(String, Vec<(u32, String)>)>>, // Open, Save
+	/// pre-selected filter (name, rules[1 = glob 0 = mime, pattern])
+	pub _current_filter: Option<(String, Vec<(u32, String)>)>, // Open, Save
+
+	/// Suggested file name
+	pub _current_name: Option<String>, // Save
+	/// Path of an existing file to pre-select
+	pub _current_file: Option<Vec<u8>>, // Save os path
+
+	/// List of files to save
+	pub _files: Option<Vec<Vec<Vec<u8>>>>, // SaveMulti os path
+}
+struct Filter {
+	pub filters:        Option<Vec<(String, Vec<(u32, String)>)>>,
+	pub current_filter: Option<(String, Vec<(u32, String)>)>,
 }
 
+// return:
+//
+// all:
+// uris: Vec<String> file://path % encoded invalid chars eg. ' '=>%20
+// choices: Vec<(String, String)>
+//
+// Open and Save:
+// current_filter (String, Vec<(u32, String)>)
+//
+// Open
+// writable (default false): bool ask user
 #[interface(name = "org.freedesktop.impl.portal.FileChooser")]
 impl FileChooser {
 	async fn open_file(

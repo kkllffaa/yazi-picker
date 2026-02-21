@@ -3,11 +3,24 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::Serialize;
 use smol::process::Command;
 use zbus::zvariant::OwnedObjectPath;
 
 use crate::PickerResult::{self, *};
 use crate::{FileChooser, PickerOptions};
+
+#[derive(Serialize)]
+pub(crate) struct PickerArgs {
+	title: String,
+	mode:  PickerMode,
+}
+#[derive(Serialize)]
+pub(crate) enum PickerMode {
+	Open,
+	Save,
+	SaveMulti,
+}
 
 impl FileChooser {
 	pub async fn pick(
