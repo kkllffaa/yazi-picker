@@ -1,13 +1,17 @@
 use std::collections::HashMap;
+use std::env::args;
 use std::error::Error;
 
-use serde::Serialize;
 use zbus::zvariant::{DeserializeDict, OwnedObjectPath, OwnedValue, Type, Value};
 use zbus::{conn, fdo, interface};
 
+use crate::options::{
+	Choice, Choices, Filter, FilterRule, FilterRuleType, Filters, PickerArgs, PickerMode,
+};
 use crate::settings::Settings;
 
 mod fifo;
+mod options;
 mod picker;
 mod settings;
 
@@ -63,36 +67,32 @@ impl PickerResult {
 
 #[derive(Debug, Default, Type, DeserializeDict)]
 #[zvariant(signature = "dict")]
-#[zvariant(deny_unknown_fields)]
-struct CommonOptions {
+#[allow(unused)]
+struct PickerOptions {
 	/// Label for the accept button with mnemonics (_A => underlined A, __ => _)
-	pub _accept_label:   Option<String>, // All
+	pub accept_label:   Option<String>, // All
 	/// Lock parent window
-	pub _modal:          Option<bool>, // All
+	pub modal:          Option<bool>, // All
 	/// List of combo boxes (id, label, choices[(id, label)], pre-selected id from choices)
-	pub _choices:        Option<Vec<(String, String, Vec<(String, String)>, String)>>, // All
+	pub choices:        Option<Vec<(String, String, Vec<(String, String)>, String)>>, // All
 	/// Suggested folder to start picker
-	pub _current_folder: Option<Vec<u8>>, // All os path
+	pub current_folder: Option<Vec<u8>>, // All os path
 
-	pub _directory: Option<bool>, // Open
-	pub _multiple:  Option<bool>, // Open, in spec is also in save but its open bug https://github.com/flatpak/xdg-desktop-portal/issues/1877
+	pub directory: Option<bool>, // Open
+	pub multiple:  Option<bool>, // Open, in spec is also in save but its open bug https://github.com/flatpak/xdg-desktop-portal/issues/1877
 
 	/// File filters (name, rules[1 = glob 0 = mime, pattern])
-	pub _filters:        Option<Vec<(String, Vec<(u32, String)>)>>, // Open, Save
+	pub filters:        Option<Vec<(String, Vec<(u32, String)>)>>, // Open, Save
 	/// pre-selected filter (name, rules[1 = glob 0 = mime, pattern])
-	pub _current_filter: Option<(String, Vec<(u32, String)>)>, // Open, Save
+	pub current_filter: Option<(String, Vec<(u32, String)>)>, // Open, Save
 
 	/// Suggested file name
-	pub _current_name: Option<String>, // Save
+	pub current_name: Option<String>, // Save
 	/// Path of an existing file to pre-select
-	pub _current_file: Option<Vec<u8>>, // Save os path
+	pub current_file: Option<Vec<u8>>, // Save os path
 
 	/// List of files to save
-	pub _files: Option<Vec<Vec<Vec<u8>>>>, // SaveMulti os path
-}
-struct Filter {
-	pub filters:        Option<Vec<(String, Vec<(u32, String)>)>>,
-	pub current_filter: Option<(String, Vec<(u32, String)>)>,
+	pub files: Option<Vec<Vec<Vec<u8>>>>, // SaveMulti os path
 }
 
 // return:
@@ -116,7 +116,19 @@ impl FileChooser {
 		title: String,
 		options: PickerOptions,
 	) -> fdo::Result<(u32, HashMap<String, OwnedValue>)> {
-		self.pick(handle, app_id, parent_window, title, options)
+		let args = PickerArgs {
+			title,
+			accept_label: options.accept_label,
+			modal: options.modal.unwrap_or(false),
+			choices: make_choices(options.choices),
+			current_folder: options.current_folder,
+			mode: PickerMode::Open {
+				directory: options.directory.unwrap_or(false),
+				multiple:  options.multiple.unwrap_or(false),
+				filters:   make_filters(options.filters, options.current_filter),
+			},
+		};
+		self.pick(handle, app_id, parent_window, args)
 			.await
 			.to_fdo_res()
 	}
@@ -129,7 +141,19 @@ impl FileChooser {
 		title: String,
 		options: PickerOptions,
 	) -> fdo::Result<(u32, HashMap<String, OwnedValue>)> {
-		self.pick(handle, app_id, parent_window, title, options)
+		let args = PickerArgs {
+			title,
+			accept_label: options.accept_label,
+			modal: options.modal.unwrap_or(false),
+			choices: make_choices(options.choices),
+			current_folder: options.current_folder,
+			mode: PickerMode::Save {
+				current_name: options.current_name,
+				current_file: options.current_file,
+				filters:      make_filters(options.filters, options.current_filter),
+			},
+		};
+		self.pick(handle, app_id, parent_window, args)
 			.await
 			.to_fdo_res()
 	}
@@ -142,8 +166,98 @@ impl FileChooser {
 		title: String,
 		options: PickerOptions,
 	) -> fdo::Result<(u32, HashMap<String, OwnedValue>)> {
-		self.pick(handle, app_id, parent_window, title, options)
+		let args = PickerArgs {
+			title,
+			accept_label: options.accept_label,
+			modal: options.modal.unwrap_or(false),
+			choices: make_choices(options.choices),
+			current_folder: options.current_folder,
+			mode: PickerMode::SaveMulti { files: () },
+		};
+		self.pick(handle, app_id, parent_window, args)
 			.await
 			.to_fdo_res()
 	}
+}
+
+fn make_choices(
+	choices: Option<Vec<(String, String, Vec<(String, String)>, String)>>,
+) -> Vec<Choices> {
+	match choices {
+		Some(choices) => choices
+			.into_iter()
+			.map(|f| Choices {
+				id:         f.0,
+				label:      f.1,
+				options:    f
+					.2
+					.into_iter()
+					.map(|f| Choice {
+						id:    f.0,
+						label: f.1,
+					})
+					.collect(),
+				default_id: f.3,
+			})
+			.collect(),
+		None => vec![],
+	}
+}
+fn make_filters(
+	filters: Option<Vec<(String, Vec<(u32, String)>)>>,
+	mut current: Option<(String, Vec<(u32, String)>)>,
+) -> Filters {
+	let mut out = Filters {
+		filters:        vec![],
+		current_filter: None,
+	};
+	let filters = match filters {
+		Some(f) => f,
+		None => {
+			if let Some(cur) = current {
+				out.filters.push(Filter {
+					name:  cur.0.clone(),
+					rules: cur
+						.1
+						.into_iter()
+						.map(|f| FilterRule {
+							ruletype: if f.0 == 0 {
+								FilterRuleType::Glob
+							} else {
+								FilterRuleType::Mime
+							},
+							rule:     f.1,
+						})
+						.collect(),
+				});
+				out.current_filter = Some(cur.0);
+			}
+			return out;
+		}
+	};
+
+	for f in filters {
+		if let Some(ref cur) = current {
+			if cur.0 == f.0 {
+				out.current_filter = Some(current.take().unwrap().0)
+			}
+		}
+		out.filters.push(Filter {
+			name:  f.0,
+			rules: f
+				.1
+				.into_iter()
+				.map(|f| FilterRule {
+					ruletype: if f.0 == 0 {
+						FilterRuleType::Mime
+					} else {
+						FilterRuleType::Glob
+					},
+					rule:     f.1,
+				})
+				.collect(),
+		});
+	}
+
+	out
 }

@@ -3,24 +3,12 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::Serialize;
 use smol::process::Command;
 use zbus::zvariant::OwnedObjectPath;
 
+use crate::FileChooser;
 use crate::PickerResult::{self, *};
-use crate::{FileChooser, PickerOptions};
-
-#[derive(Serialize)]
-pub(crate) struct PickerArgs {
-	title: String,
-	mode:  PickerMode,
-}
-#[derive(Serialize)]
-pub(crate) enum PickerMode {
-	Open,
-	Save,
-	SaveMulti,
-}
+use crate::options::*;
 
 impl FileChooser {
 	pub async fn pick(
@@ -28,12 +16,9 @@ impl FileChooser {
 		_handle: OwnedObjectPath,
 		_app_id: String,
 		_parent_window: String,
-		title: String,
-		options: PickerOptions,
+		args: PickerArgs,
 	) -> PickerResult {
-		println!("{:?}", options);
-
-		println!("Request received: {}, options: {:?}", title, options);
+		println!("args: {}", serde_json::to_string_pretty(&args).unwrap());
 
 		let timestamp = SystemTime::now()
 			.duration_since(UNIX_EPOCH)
@@ -41,8 +26,16 @@ impl FileChooser {
 			.as_nanos();
 		let filename = format!("portal-selection-{}", timestamp);
 		let tmp_path = temp_dir().join(filename);
-		drop(File::create_new(&tmp_path).unwrap()); // TODO: dont block on file create? idk
-		let cmd = format!("pick -o {}", tmp_path.display());
+
+		// TODO: dont block on file create? idk
+		match File::create_new(&tmp_path) {
+			Ok(f) => {
+				serde_json::to_writer(f, &args).unwrap();
+			}
+			Err(_) => return Failure,
+		}
+
+		let cmd = format!("pick -j {} -o {}", tmp_path.display(), tmp_path.display());
 
 		println!(
 			"Launching: {} {:?} '{}'",
