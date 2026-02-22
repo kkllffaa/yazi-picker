@@ -84,8 +84,15 @@ inode/directory=yazi.desktop
 ```
 
 
+### [Compatibility (from xdg-desktop-portal-termfilechooser repo)](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatibility.md)
 
-https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatibility.md
+### [Portal Backend Specification](https://github.com/flatpak/xdg-desktop-portal/blob/main/data/org.freedesktop.impl.portal.FileChooser.xml)
 
-
-Todo's and plans: [todo](todo.md).
+## TODO:
+- makefile
+- man page
+- filters
+- use fifo???
+- open as floating (if even possible?)
+- include ``` export YAZI_LOG=debug ``` in devtools
+- improve test picker

@@ -11,24 +11,29 @@ local function notifyerror(message)
 	})
 end
 local get_out = ya.sync(function(state)
-	return state.out
+	return state.out, state.json
 end)
 local function finish(urls)
-	local out = get_out()
+	local out, makejson = get_out()
 
 	ya.dbg("printing: " .. tostring(urls) .. " to " .. tostring(out))
 
-	local url = Url("/root/Downloads/logo.png")
-	ya.dbg(tostring(url))
 
 	local f = io.open(out, "w")
 	if f then
-		-- local files = {}
-		for _, v in pairs(urls) do
-			-- table.insert(files, tostring(v))
-			f:write(tostring(v) .. '\n')
+		if makejson then
+			local files = {}
+			for _, v in pairs(urls) do
+				table.insert(files, tostring(v))
+			end
+			local R = {}
+			R.files = files
+			f:write(json.encode(R))
+		else
+			for _, v in pairs(urls) do
+				f:write(tostring(v) .. '\n')
+			end
 		end
-		-- f:write(json.encode(files))
 		f:flush()
 		f:close()
 		ya.emit("quit", {})
@@ -109,24 +114,31 @@ function M:setup(opts)
 
 	local raw_out   = utils.popenv("YAZI_PICKER_OUT")
 	local raw_mode  = utils.popenv("YAZI_PICKER_MODE")
+	local raw_in    = utils.popenv("YAZI_PICKER_IN")
 	local raw_json  = utils.popenv("YAZI_PICKER_JSON")
 
 	self.out        = raw_out
-	self.mode       = tonumber(raw_mode)
+	local mode      = tonumber(raw_mode)
+	self.json       = raw_json == "1"
 
 	if not self.out then
 		notifyerror("no output file specified")
 		return
 	end
-	if self.mode then
-		self.opts = utils.mode_opts[self.mode]
-	elseif raw_json then
-		local f = io.open(raw_json, "r")
+
+	if raw_in and raw_in:len() > 0 then
+		local f = io.open(raw_in, "r")
 		if f then
 			self.opts = json.decode(f:read("a"))
+		else
+			notifyerror("failed to open options file")
+			return
 		end
+	elseif mode then
+		ya.dbg("mode: " .. mode)
+		self.opts = utils.mode_opts[mode]
 	else
-		notifyerror("no mode or json file specified")
+		notifyerror("no mode or options file specified")
 		return
 	end
 
@@ -143,7 +155,7 @@ function M:setup(opts)
 	end, 1000, Header.RIGHT)
 
 	Status:children_add(function()
-		local label = utils.make_label(self.opts.mode)
+		local label = utils.make_label(self.opts.mode or 1)
 		return ui.Span(label)
 			:fg("black")
 			:bg("yellow")
@@ -176,7 +188,7 @@ function M:entry(job)
 
 
 	if not shift then
-		local ok, err = utils.verify_file_type(urls, opts)
+		local ok, err = utils.verify_file_type(urls, opts.mode)
 		if not ok then
 			notifyerror(err)
 			return

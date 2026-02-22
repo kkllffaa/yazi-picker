@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 use serde::ser::{Error, SerializeMap};
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 #[derive(Serialize)]
 pub(crate) enum FilterRuleType {
@@ -68,7 +68,7 @@ impl MapEntry for Choices {
 }
 
 #[derive(Serialize)]
-pub(crate) struct PickerArgs {
+pub(crate) struct PickerRequest {
 	pub title:          String,
 	pub accept_label:   Option<String>,
 	pub modal:          bool,
@@ -95,6 +95,10 @@ pub(crate) enum PickerMode {
 	SaveMulti {
 		files: (),
 	},
+}
+#[derive(Deserialize, Debug)]
+pub(crate) struct PickerResponse {
+	pub files: Vec<String>,
 }
 
 pub trait MapEntry {

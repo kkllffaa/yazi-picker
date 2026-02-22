@@ -19,13 +19,19 @@ M.verify_file_type = function(urls, opts)
 	if not (urls and opts) then
 		return false, "urls == nil or opts == nil"
 	end
-	local req_dir = opts.directory or opts.id == "SaveMulti"
-	local req_single = not opts.multiple or opts.id == "SaveMulti"
-
 	local len = #urls
 	if len == 0 then
 		return false, "nothing selected"
-	elseif req_single and len ~= 1 then
+	end
+
+	if opts.id == "All" then
+		return true
+	end
+
+	local req_dir = opts.directory or opts.id == "SaveMulti"
+	local req_single = not opts.multiple or opts.id == "SaveMulti"
+
+	if req_single and len > 1 then
 		return false, "too many selected"
 	end
 
@@ -40,6 +46,11 @@ M.verify_file_type = function(urls, opts)
 end
 
 M.mode_opts = {
+	[0] = {
+		mode = {
+			id = "All"
+		}
+	},
 	[1] = {
 		mode = {
 			id = "Open",

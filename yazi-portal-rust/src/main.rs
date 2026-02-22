@@ -6,7 +6,7 @@ use zbus::zvariant::{DeserializeDict, OwnedObjectPath, OwnedValue, Type, Value};
 use zbus::{conn, fdo, interface};
 
 use crate::options::{
-	Choice, Choices, Filter, FilterRule, FilterRuleType, Filters, PickerArgs, PickerMode,
+	Choice, Choices, Filter, FilterRule, FilterRuleType, Filters, PickerMode, PickerRequest,
 };
 use crate::settings::Settings;
 
@@ -116,7 +116,7 @@ impl FileChooser {
 		title: String,
 		options: PickerOptions,
 	) -> fdo::Result<(u32, HashMap<String, OwnedValue>)> {
-		let args = PickerArgs {
+		let args = PickerRequest {
 			title,
 			accept_label: options.accept_label,
 			modal: options.modal.unwrap_or(false),
@@ -141,7 +141,7 @@ impl FileChooser {
 		title: String,
 		options: PickerOptions,
 	) -> fdo::Result<(u32, HashMap<String, OwnedValue>)> {
-		let args = PickerArgs {
+		let args = PickerRequest {
 			title,
 			accept_label: options.accept_label,
 			modal: options.modal.unwrap_or(false),
@@ -166,7 +166,7 @@ impl FileChooser {
 		title: String,
 		options: PickerOptions,
 	) -> fdo::Result<(u32, HashMap<String, OwnedValue>)> {
-		let args = PickerArgs {
+		let args = PickerRequest {
 			title,
 			accept_label: options.accept_label,
 			modal: options.modal.unwrap_or(false),

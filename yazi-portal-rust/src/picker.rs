@@ -1,5 +1,5 @@
 use std::env::temp_dir;
-use std::fs::{self, File};
+use std::fs::{self, File, create_dir};
 use std::io::Read;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -16,7 +16,7 @@ impl FileChooser {
 		_handle: OwnedObjectPath,
 		_app_id: String,
 		_parent_window: String,
-		args: PickerArgs,
+		args: PickerRequest,
 	) -> PickerResult {
 		println!("args: {}", serde_json::to_string_pretty(&args).unwrap());
 
@@ -24,18 +24,26 @@ impl FileChooser {
 			.duration_since(UNIX_EPOCH)
 			.unwrap()
 			.as_nanos();
-		let filename = format!("portal-selection-{}", timestamp);
-		let tmp_path = temp_dir().join(filename);
+		let tmp_dir_name = format!("portal-selection-{}", timestamp);
+		let tmp_dir_path = temp_dir().join(tmp_dir_name);
+		let tmp_request_path = tmp_dir_path.join("request.json");
+		let tmp_response_path = tmp_dir_path.join("response.json");
+
+		create_dir(&tmp_dir_path).unwrap();
 
 		// TODO: dont block on file create? idk
-		match File::create_new(&tmp_path) {
+		match File::create_new(&tmp_request_path) {
 			Ok(f) => {
 				serde_json::to_writer(f, &args).unwrap();
 			}
 			Err(_) => return Failure,
 		}
 
-		let cmd = format!("pick -j {} -o {}", tmp_path.display(), tmp_path.display());
+		let cmd = format!(
+			"../pick.sh -j -i {} -o {}", // TODO
+			tmp_request_path.display(),
+			tmp_response_path.display()
+		);
 
 		println!(
 			"Launching: {} {:?} '{}'",
@@ -62,7 +70,7 @@ impl FileChooser {
 
 		// TODO: dont block
 		let mut selection = String::new();
-		match File::open(&tmp_path) {
+		match File::open(&tmp_response_path) {
 			Ok(mut f) => {
 				if let Err(e) = f.read_to_string(&mut selection) {
 					eprintln!("Failed to read file: {}", e);
@@ -74,22 +82,23 @@ impl FileChooser {
 				return Failure;
 			}
 		}
-		fs::remove_file(tmp_path).unwrap();
+		fs::remove_dir_all(tmp_dir_path).unwrap();
 
-		let selection = selection.trim();
-		if selection.is_empty() {
+		let selection: PickerResponse = serde_json::from_str(&selection).unwrap();
+		if selection.files.is_empty() {
 			eprintln!("Selection cancelled or empty");
 			return Failure;
 		}
 
 		let uris: Vec<String> = selection
-			.lines()
+			.files
+			.iter()
 			.map(|l| l.trim())
 			.filter(|l| !l.is_empty())
 			.map(|p| format!("file://{}", p))
 			.collect();
 
-		println!("User selected: {}", selection);
+		println!("Response: {:?}", selection);
 		println!("User selected uris: {:?}", uris);
 
 		Success(uris)
