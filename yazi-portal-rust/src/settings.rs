@@ -3,30 +3,22 @@ use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
-// --- Configuration Logic ---
+pub(crate) const CONFIG_LOCATION: &str = "yazi-picker";
+
 #[derive(serde::Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-#[serde(default)]
-pub(crate) struct Settings {
+pub(crate) struct Config {
 	pub terminal_binary: String,
 	pub terminal_args:   Vec<String>,
 }
-impl Default for Settings {
-	fn default() -> Self {
-		Self {
-			terminal_binary: String::from("kitty"),
-			terminal_args:   ["--class=yazi-picker", "-e", "sh", "-c"]
-				.into_iter()
-				.map(String::from)
-				.collect(),
-		}
-	}
-}
 
-impl Settings {
+impl Config {
 	pub fn load() -> Result<Self, Box<dyn Error>> {
+		let defaults = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default-config.toml"));
+		let defaults: Config = toml::from_str(defaults).unwrap();
+
 		let mut conf_file = None;
-		if let Some(cf) = dirs::config_dir().map(|f| f.join("yazi-picker").join("config.toml")) {
+		if let Some(cf) = dirs::config_dir().map(|f| f.join(CONFIG_LOCATION).join("config.toml")) {
 			if cf.exists() {
 				conf_file = Some(cf);
 			}
@@ -39,12 +31,12 @@ impl Settings {
 				conf_file = Some(local_cf)
 			}
 		}
-		let settings: Settings = if let Some(cf) = conf_file {
+		let config: Config = if let Some(ref cf) = conf_file {
 			println!("loading config from: {}", cf.display());
 			toml::from_str(&fs::read_to_string(cf)?)?
 		} else {
 			println!("using default config");
-			Default::default()
+			defaults
 		};
 
 		// 2. Override with TERMINAL env var (Convention)
@@ -52,6 +44,6 @@ impl Settings {
 		// 	builder = builder.set_override("terminal_binary", term)?;
 		// }
 
-		Ok(settings)
+		Ok(config)
 	}
 }

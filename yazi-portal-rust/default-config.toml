@@ -1,0 +1,6 @@
+terminal_binary = "kitty"
+# {o} => output file
+# {i} => input file
+# {c} => config directory (where this file is)
+# {t} => requests tmp directory
+terminal_args = [ "--class=yazi-picker", "-e", "sh", "-c", "pick -j -i {i} -o {o}" ]

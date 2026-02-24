@@ -122,7 +122,6 @@ function M:setup(opts)
 	self.json       = raw_json == "1"
 
 	if not self.out then
-		notifyerror("no output file specified")
 		return
 	end
 
@@ -195,7 +194,6 @@ function M:entry(job)
 		end
 
 		-- TODO: ask if overriding
-		-- TODO: dir + file mode (mode x or 5)
 		finish(urls)
 
 		-- local yes = ya.confirm {

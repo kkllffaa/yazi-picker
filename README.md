@@ -1,4 +1,4 @@
-# work in progress some methods are not implemented and plugin only works with files
+# work in progress
 
 ## dev:
 * ```export YAZI_LOG=debug```
@@ -7,9 +7,10 @@
 * test-picker.py	-> request file from dbus portal service
 
 ## $XDG_CONFIG_HOME/yazi-picker/config.toml
+copy from [yazi-portal-rust/default-config.toml](yazi-portal-rust/default-config.toml)
 ```
-terminal_bin = "ghostty" # your favourite terminal emulator
-terminal_args = [ "--class=floating", "-e", "sh", "-c" ] # args to it
+terminal_binary = "ghostty" # your favourite terminal emulator
+terminal_args = [ "--class=floating", "-e", "sh", "-c" "my_picker_script" ] # args to it
 ```
 ## $XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf
 ```
@@ -19,8 +20,8 @@ org.freedesktop.impl.portal.FileChooser=yazi-picker
 ## $XDG_CONFIG_HOME/yazi/init.lua
 ```
 require("yazi-picker"):setup {
-	Enter = "",
-	ShiftEnter = ""
+	Enter = "open",
+	ShiftEnter = "open --interactive"
 }
 ```
 ## $XDG_CONFIG_HOME/yazi/keymap.toml
@@ -33,7 +34,7 @@ on = ["<S-Enter>"]
 run = "plugin yazi-picker -- --shift
 ```
 ## $XDG_CONFIG_HOME/yazi/yazi-picker.yazi/
-copy main.lua from smart-picker.yazi
+copy from [smart-picker.yazi](smart-picker.yazi)
 
 ## nix
 ```
@@ -63,12 +64,12 @@ programs.yazi = {
 ```
 
 ## modes:
+0. mixed - hover and enter or select and enter and/or shift enter to include current
 1. single file - hover and enter
 2. non existant file - hover and enter to override or shift enter to type
 3. single directory - hover and enter or shift enter to select current
 4. multi file - hover and enter or select and enter
 5. multi dir - hover and enter or select and enter and/or shift enter to include current
-6. mixed - hover and enter or select and enter and/or shift enter to include current
 
 
 
@@ -91,7 +92,17 @@ inode/directory=yazi.desktop
 ## TODO:
 - makefile
 - man page
-- filters
+- labels, titles and more info
+- choices
+- current folder
+- readonly open
+- new file on save
+- open cwd
+- better savefiles handling
+- complete response
+- better config
+- filters and filter switcher
+- modal (if possible?)
 - use fifo???
 - open as floating (if even possible?)
 - include ``` export YAZI_LOG=debug ``` in devtools

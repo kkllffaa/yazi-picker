@@ -8,7 +8,7 @@ use zbus::{conn, fdo, interface};
 use crate::options::{
 	Choice, Choices, Filter, FilterRule, FilterRuleType, Filters, PickerMode, PickerRequest,
 };
-use crate::settings::Settings;
+use crate::settings::Config;
 
 mod fifo;
 mod options;
@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	// let conff = include_str!("../default-config.toml");
 
 	let chooser = FileChooser {
-		settings: Settings::load()?,
+		settings: Config::load()?,
 	};
 
 	println!("settings: {:?}", &chooser.settings);
@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 struct FileChooser {
-	settings: Settings,
+	settings: Config,
 }
 pub enum PickerResult {
 	Success(Vec<String>),
